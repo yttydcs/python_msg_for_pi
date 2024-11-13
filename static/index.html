@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Device IP Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://unpkg.com/vue@3"></script>
+</head>
+<body>
+    <div id="app" class="container my-5">
+        <h1 class="text-center mb-4">Raspberry Pi Devices Dashboard</h1>
+
+        <div class="text-center mb-3">
+            <button @click="fetchDeviceData" class="btn btn-primary">Refresh Data</button>
+        </div>
+
+        <!-- 使用 v-if 确保只有在 devices 不为空时才渲染 -->
+        <div v-if="devices.length" class="row">
+            <div v-for="(device, index) in devices" :key="index" class="col-md-6 col-lg-4 mb-4">
+                <div class="card shadow">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ device.device_id }}</h5>
+                        <p class="card-text">
+                            <strong>Last Updated:</strong> {{ device.last_update }}<br>
+                            <strong>Public IP:</strong> {{ device.public_ip }}<br>
+                            <strong>Private IPs:</strong>
+                            <ul class="list-unstyled">
+                                <li v-for="ip in device.private_ips" :key="ip">{{ ip }}</li>
+                            </ul>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div v-else class="text-center">
+            <p>No devices found. Please refresh to load data.</p>
+        </div>
+    </div>
+
+    <script>
+        const { createApp } = Vue;
+
+        createApp({
+            data() {
+                return {
+                    devices: []  // 初始为空，避免未定义错误
+                };
+            },
+            methods: {
+                async fetchDeviceData() {
+                    try {
+                        const response = await fetch("/devices");  // 自动指向Flask的/devices路由
+                        if (response.ok) {
+                            const data = await response.json();
+                            this.devices = Object.keys(data).map(key => ({
+                                device_id: key,
+                                ...data[key]
+                            }));
+                        } else {
+                            console.error("Failed to fetch device data:", response.status);
+                        }
+                    } catch (error) {
+                        console.error("Error fetching data:", error);
+                    }
+                }
+            },
+            mounted() {
+                this.fetchDeviceData();
+            }
+        }).mount("#app");
+    </script>
+</body>
+</html>
